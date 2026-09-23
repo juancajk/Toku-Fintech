@@ -37,7 +37,7 @@ def construir_pipeline_rag():
 
     print("[4/4] Cargando modelo de lenguaje 100% local en tu PC...")
     
-    # Prompt ultra-estricto optimizado para modelos pequeños
+    
     template = """Eres un asistente legal estrictamente limitado al contexto provisto.
 
 REGLAS ABSOLUTAS:
@@ -56,7 +56,7 @@ Respuesta fundamentada:"""
         template=template, input_variables=["context", "question"]
     )
 
-    # Temperatura en 0.0 y do_sample=False para eliminar la creatividad del modelo pequeño
+    
     llm = HuggingFacePipeline.from_model_id(
         model_id="Qwen/Qwen2.5-0.5B-Instruct",
         task="text-generation",
@@ -107,3 +107,4 @@ if __name__ == "__main__":
             except Exception as e:
                 print(f"ERROR: {e}")
             print("=" * 65)
+            
