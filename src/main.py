@@ -10,7 +10,7 @@ def construir_pipeline_rag():
     pdf_path = "./documentos/Ley_Fintech_y_Normas_CMF.pdf"
 
     if not os.path.exists(pdf_path):
-        print("Error: No se encuentra el archivo PDF.")
+        print("Error: No se encuentra el archivo PDF en la ruta especificada.")
         return None
 
     print("[1/4] Cargando documentos normativos oficiales de Toku...")
@@ -36,12 +36,13 @@ def construir_pipeline_rag():
     )
 
     print("[4/4] Cargando modelo de lenguaje 100% local en tu PC...")
-    template = """Eres un asistente legal especializado en la Ley N° 21.521 para Toku.
+    
+    # Prompt ultra-estricto optimizado para modelos pequeños
+    template = """Eres un asistente legal estrictamente limitado al contexto provisto.
 
-DIRECTRICES ESTRICTAS:
-1. Utiliza EXCLUSIVAMENTE el contexto normativo recuperado para responder.
-2. Esta terminantemente prohibido inventar informacion.
-3. Si la respuesta no esta en el contexto, indica: "La informacion no se encuentra disponible."
+REGLAS ABSOLUTAS:
+1. Si la respuesta exacta no se encuentra explícitamente en el "Contexto recuperado", debes responder ÚNICAMENTE: "La información no se encuentra disponible."
+2. Está terminantemente prohibido inventar cifras, artículos, montos o explicaciones.
 
 Contexto recuperado:
 {context}
@@ -55,10 +56,15 @@ Respuesta fundamentada:"""
         template=template, input_variables=["context", "question"]
     )
 
+    # Temperatura en 0.0 y do_sample=False para eliminar la creatividad del modelo pequeño
     llm = HuggingFacePipeline.from_model_id(
         model_id="Qwen/Qwen2.5-0.5B-Instruct",
         task="text-generation",
-        pipeline_kwargs={"max_new_tokens": 300, "temperature": 0.1}
+        pipeline_kwargs={
+            "max_new_tokens": 150, 
+            "temperature": 0.0, 
+            "do_sample": False
+        }
     )
 
     qa_chain = RetrievalQA.from_chain_type(
@@ -73,27 +79,31 @@ Respuesta fundamentada:"""
 
 if __name__ == "__main__":
     print("=========================================================")
-    print("AGENTE RAG TOKU - SISTEMA 100% LOCAL Y ROBUSTO")
+    print("AGENTE RAG TOKU - DEMOSTRACIÓN OFICIAL ISY0101")
     print("=========================================================")
 
     agente = construir_pipeline_rag()
 
     if agente:
-        consulta = "¿Cuales son los requisitos exigidos por la ley para la prestacion de servicios financieros basados en tecnologia?"
-        print(f"Consulta de prueba: '{consulta}'\n")
+        consultas_prueba = [
+            "¿Cuáles son los requisitos exigidos por la ley para la prestación de servicios financieros basados en tecnología?",
+            "¿Cuántos impuestos en criptomonedas debe pagar Toku según el artículo 99?" # Prueba anti-alucinación
+        ]
 
-        try:
-            resultado = agente.invoke({"query": consulta})
-            
-            print("-------------------- RESPUESTA DEL AGENTE --------------------")
-            print(resultado["result"])
-            print("--------------------------------------------------------------")
+        for idx, consulta in enumerate(consultas_prueba, 1):
+            print(f"\n[PRUEBA {idx}/2] Consulta: '{consulta}'\n")
+            try:
+                resultado = agente.invoke({"query": consulta})
+                
+                print("-------------------- RESPUESTA DEL AGENTE --------------------")
+                print(resultado["result"])
+                print("--------------------------------------------------------------")
 
-            print("EVIDENCIA DE TRAZABILIDAD (Fuentes de origen):")
-            for idx, doc in enumerate(resultado["source_documents"], 1):
-                print(
-                    f"[{idx}] Archivo: {doc.metadata.get('source', 'N/A')} | Pagina: {doc.metadata.get('page', 'N/A')}"
-                )
-            print("=========================================================")
-        except Exception as e:
-            print(f"ERROR: {e}")
+                print("TRAZABILIDAD INSTITUCIONAL (Fuentes de origen):")
+                for f_idx, doc in enumerate(resultado["source_documents"], 1):
+                    print(
+                        f"  [{f_idx}] Archivo: {doc.metadata.get('source', 'N/A')} | Página: {doc.metadata.get('page', 'N/A')}"
+                    )
+            except Exception as e:
+                print(f"ERROR: {e}")
+            print("=" * 65)
